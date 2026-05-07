@@ -39,7 +39,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
         leads: { include: { enrollment: { include: { payments: true } } } },
         payouts: { orderBy: { createdAt: 'desc' } },
       },
-    });
+    }) as any);
     if (!partner) { res.status(404).json({ error: 'Partner not found' }); return; }
     const totalCommission = partner.payouts.reduce((s, p) => s + Number(p.commissionAmount), 0);
     const totalPaid = partner.payouts.filter(p => p.payoutStatus === 'paid').reduce((s, p) => s + Number(p.commissionAmount), 0);

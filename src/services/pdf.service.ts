@@ -289,7 +289,8 @@ export async function generateApplicationForm(data: ApplicationData): Promise<st
         doc.moveDown(0.5);
       });
     } else {
-      doc.text('No education details provided', { italic: true });
+      doc.font('Helvetica-Oblique').text('No education details provided');
+      doc.font('Helvetica');
     }
     doc.moveDown();
 
@@ -298,12 +299,14 @@ export async function generateApplicationForm(data: ApplicationData): Promise<st
     doc.moveDown(0.5);
     if (data.workExperience && data.workExperience.length > 0) {
       data.workExperience.forEach(w => {
-        doc.fontSize(10).fillColor('#1f2937').text(`${w.designation} at ${w.employer}`, { fontWeight: 'bold' });
+        doc.fontSize(10).fillColor('#1f2937').font('Helvetica-Bold').text(`${w.designation} at ${w.employer}`);
+        doc.font('Helvetica');
         doc.fontSize(9).fillColor('#6b7280').text(`Period: ${w.period} | Duties: ${w.duties}`);
         doc.moveDown(0.5);
       });
     } else {
-      doc.fontSize(10).fillColor('#1f2937').text('No work experience provided', { italic: true });
+      doc.fontSize(10).fillColor('#1f2937').font('Helvetica-Oblique').text('No work experience provided');
+      doc.font('Helvetica');
     }
     doc.moveDown();
 

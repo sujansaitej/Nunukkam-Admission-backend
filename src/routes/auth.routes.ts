@@ -128,7 +128,7 @@ router.patch('/users/:id', authenticate, async (req: AuthRequest, res: Response)
     if (password) data.password = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.update({
-      where: { userId: req.params.id },
+      where: { userId: req.params.id as string },
       data,
       select: { userId: true, name: true, email: true, role: true, isActive: true }
     });

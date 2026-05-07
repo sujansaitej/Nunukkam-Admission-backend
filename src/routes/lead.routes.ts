@@ -148,7 +148,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
 router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const lead = await prisma.lead.findUnique({
-      where: { leadId: req.params.id },
+      where: { leadId: req.params.id as string },
       include: {
         counselor: { select: { userId: true, name: true, email: true } },
         partner: { select: { partnerId: true, name: true, commissionRate: true } },
@@ -184,7 +184,7 @@ router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
     if (partner_id !== undefined) data.partnerId = partner_id;
 
     const lead = await prisma.lead.update({
-      where: { leadId: req.params.id },
+      where: { leadId: req.params.id as string },
       data,
     });
 
@@ -198,7 +198,7 @@ router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
 router.post('/:id/send-assessment', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const lead = await prisma.lead.update({
-      where: { leadId: req.params.id },
+      where: { leadId: req.params.id as string },
       data: { status: 'assessment_sent' },
     });
 
@@ -213,7 +213,7 @@ router.post('/:id/send-assessment', authenticate, async (req: AuthRequest, res: 
 router.get('/:id/pdf', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const lead = await prisma.lead.findUnique({
-      where: { leadId: req.params.id },
+      where: { leadId: req.params.id as string },
       include: { partner: true },
     });
 

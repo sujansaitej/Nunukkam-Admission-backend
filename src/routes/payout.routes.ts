@@ -39,7 +39,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
 router.patch('/:id/status', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { payout_status, payment_reference } = req.body;
-    const payout = await prisma.partnerPayout.findUnique({ where: { payoutId: req.params.id } });
+    const payout = await prisma.partnerPayout.findUnique({ where: { payoutId: req.params.id as string } });
     if (!payout) { res.status(404).json({ error: 'Payout not found' }); return; }
 
     // Validate transition
@@ -52,7 +52,7 @@ router.patch('/:id/status', authenticate, async (req: AuthRequest, res: Response
     if (payout_status === 'processed') data.processedAt = new Date();
     if (payout_status === 'paid') { data.paidAt = new Date(); data.paymentReference = payment_reference || null; }
 
-    const updated = await prisma.partnerPayout.update({ where: { payoutId: req.params.id }, data });
+    const updated = await prisma.partnerPayout.update({ where: { payoutId: req.params.id as string }, data });
     res.json(updated);
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });

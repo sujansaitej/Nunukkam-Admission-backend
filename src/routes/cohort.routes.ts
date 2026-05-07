@@ -49,7 +49,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
 router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const cohort = await prisma.cohort.findUnique({
-      where: { cohortId: req.params.id },
+      where: { cohortId: req.params.id as string },
       include: {
         counselor: { select: { userId: true, name: true, email: true } },
         enrollments: {
