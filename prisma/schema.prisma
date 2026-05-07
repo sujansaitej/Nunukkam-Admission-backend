@@ -1,0 +1,224 @@
+// Nunukkam EIS — Database Schema
+// All 8 tables as specified in 05_DATABASE_SCHEMA.md
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Table 7: Users (Staff / Counselors) ───────────────────────────
+model User {
+  userId    String   @id @default(uuid()) @map("user_id")
+  name      String   @db.VarChar(100)
+  email     String   @unique @db.VarChar(150)
+  password  String
+  role      String   @db.VarChar(30) // admin | counselor | partner_manager
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  assignedLeads Lead[]
+  managedCohorts Cohort[] @relation("CohortCounselor")
+
+  @@map("users")
+}
+
+// ─── Table 5: Partners ─────────────────────────────────────────────
+model Partner {
+  partnerId      String   @id @default(uuid()) @map("partner_id")
+  name           String   @db.VarChar(150)
+  type           String?  @db.VarChar(50) // college | coaching_center | referral_agent
+  contactPerson  String?  @map("contact_person") @db.VarChar(100)
+  mobile         String?  @db.VarChar(15)
+  email          String?  @db.VarChar(150)
+  commissionRate Decimal  @map("commission_rate") @db.Decimal(5, 2) // e.g. 15.00 means 15%
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  leads   Lead[]
+  payouts PartnerPayout[]
+
+  @@map("partners")
+}
+
+// ─── Table 1: Leads (We Shine Academy Enrolment Form) ──────────────
+model Lead {
+  leadId            String   @id @default(uuid()) @map("lead_id")
+  enrolmentFormNo   String?  @map("enrolment_form_no") @db.VarChar(50)
+
+  // ── Course Info ──
+  courseName        String?  @map("course_name") @db.VarChar(150)
+  branch            String?  @db.VarChar(100)
+  timing            String?  @db.VarChar(50)
+
+  // ── Personal Details ──
+  name              String   @db.VarChar(100)
+  fatherName        String?  @map("father_name") @db.VarChar(100)
+  fatherOccupation  String?  @map("father_occupation") @db.VarChar(100)
+  address           String?  @db.Text
+  state             String?  @db.VarChar(50)
+  pinCode           String?  @map("pin_code") @db.VarChar(10)
+  city              String?  @db.VarChar(100)
+  dateOfBirth       DateTime? @map("date_of_birth") @db.Date
+  age               Int?
+  gender            String?  @db.VarChar(10)   // Male / Female
+  category          String?  @db.VarChar(10)   // OBC / SC / ST / GEN
+  photoUrl          String?  @map("photo_url")
+
+  // ── Contact Details ──
+  mobile            String   @unique @db.VarChar(15)
+  alternateMobile   String?  @map("alternate_mobile") @db.VarChar(15)
+  email             String?  @db.VarChar(150)
+
+  // ── Education Qualifications (JSON array) ──
+  // [{exam: "Graduation", degree: "B.Com", dateOfPassing: "2023", percentage: "78", grade: "First"}]
+  educationDetails  Json?    @map("education_details")
+
+  // ── Work Experience (JSON array) ──
+  // [{employer: "ABC Ltd", designation: "Sales", period: "2 years", duties: "...", reasonLeaving: "...", yearOfService: "2022-2024"}]
+  workExperience    Json?    @map("work_experience")
+
+  // ── Languages Known (JSON array) ──
+  // [{language: "Tamil", read: true, write: true, speak: true}]
+  languagesKnown    Json?    @map("languages_known")
+
+  // ── Message Permission ──
+  messageConsent    Boolean? @map("message_consent") // Yes I Like it / No I Don't Like it
+
+  // ── Declaration ──
+  declarationPlace  String?  @map("declaration_place") @db.VarChar(100)
+  declarationDate   DateTime? @map("declaration_date") @db.Date
+
+  // ── Reference Friends (JSON array) ──
+  // [{name: "...", mobile: "...", qualification: "...", location: "..."}]
+  referenceFriends  Json?    @map("reference_friends")
+
+  // ── Legacy fields ──
+  education         String?  @db.VarChar(50)
+  currentStatus     String?  @map("current_status") @db.VarChar(30)
+  preferredRole     String?  @map("preferred_role") @db.VarChar(100)
+  salaryExpectation String?  @map("salary_expectation") @db.VarChar(50)
+  source            String?  @db.VarChar(50) // just_dial / sulekha / website / newspapers / banners / pamphlet / posters / reference / others / partner
+  partnerId         String?  @map("partner_id")
+  counselorId       String?  @map("counselor_id")
+  status            String   @default("new") @db.VarChar(30)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
+
+  partner    Partner?         @relation(fields: [partnerId], references: [partnerId], onDelete: SetNull)
+  counselor  User?            @relation(fields: [counselorId], references: [userId], onDelete: SetNull)
+  assessment AssessmentScore?
+  enrollment Enrollment?
+
+  @@index([mobile], name: "idx_leads_mobile")
+  @@index([status], name: "idx_leads_status")
+  @@index([counselorId], name: "idx_leads_counselor")
+  @@map("leads")
+}
+
+// ─── Table 2: Assessment Scores ────────────────────────────────────
+model AssessmentScore {
+  assessmentId        String   @id @default(uuid()) @map("assessment_id")
+  leadId              String   @unique @map("lead_id")
+  commScore           Decimal  @map("comm_score") @db.Decimal(5, 2)
+  bfsiScore           Decimal  @map("bfsi_score") @db.Decimal(5, 2)
+  disciplineScore     Decimal  @map("discipline_score") @db.Decimal(5, 2)
+  agilityScore        Decimal  @map("agility_score") @db.Decimal(5, 2)
+  professionalismScore Decimal @map("professionalism_score") @db.Decimal(5, 2)
+  confidenceScore     Decimal  @map("confidence_score") @db.Decimal(5, 2)
+  overallCri          Decimal  @map("overall_cri") @db.Decimal(5, 2)
+  band                String   @db.VarChar(30) // High / Trainable / Needs Intervention / High Risk
+  scorecardPdfUrl     String?  @map("scorecard_pdf_url")
+  answers             Json?    @map("answers") // Stores raw answers for detailed review
+  completedAt         DateTime @default(now()) @map("completed_at")
+
+  lead Lead @relation(fields: [leadId], references: [leadId], onDelete: Cascade)
+
+  @@index([leadId], name: "idx_assessment_lead")
+  @@map("assessment_scores")
+}
+
+// ─── Table 8: Cohorts ──────────────────────────────────────────────
+model Cohort {
+  cohortId  String   @id @default(uuid()) @map("cohort_id")
+  name        String   @db.VarChar(100) // e.g. "BFSI Batch June 2025"
+  courseName  String?  @map("course_name") @db.VarChar(100)
+  branch      String?  @db.VarChar(100)
+  timing      String?  @db.VarChar(100)
+  startDate   DateTime @map("start_date") @db.Date
+  endDate     DateTime? @map("end_date") @db.Date
+  capacity  Int
+  counselorId String? @map("counselor_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  counselor   User?        @relation("CohortCounselor", fields: [counselorId], references: [userId], onDelete: SetNull)
+  enrollments Enrollment[]
+
+  @@map("cohorts")
+}
+
+// ─── Table 3: Enrollments ──────────────────────────────────────────
+model Enrollment {
+  enrollmentId         String    @id @default(uuid()) @map("enrollment_id")
+  leadId               String    @unique @map("lead_id")
+  cohortId             String?   @map("cohort_id")
+  commitmentAccepted   Boolean   @default(false) @map("commitment_accepted")
+  commitmentAcceptedAt DateTime? @map("commitment_accepted_at")
+  enrolledAt           DateTime  @default(now()) @map("enrolled_at")
+  lmsAccessCreated     Boolean   @default(false) @map("lms_access_created")
+  lmsAccessCreatedAt   DateTime? @map("lms_access_created_at")
+
+  lead     Lead            @relation(fields: [leadId], references: [leadId], onDelete: Cascade)
+  cohort   Cohort?         @relation(fields: [cohortId], references: [cohortId], onDelete: SetNull)
+  payments Payment[]
+  payouts  PartnerPayout[]
+
+  @@map("enrollments")
+}
+
+// ─── Table 4: Payments ─────────────────────────────────────────────
+model Payment {
+  paymentId     String   @id @default(uuid()) @map("payment_id")
+  enrollmentId  String   @map("enrollment_id")
+  feePlan       String   @map("fee_plan") @db.VarChar(20) // full / installment
+  totalFee      Decimal  @map("total_fee") @db.Decimal(10, 2)
+  amountPaid    Decimal  @map("amount_paid") @db.Decimal(10, 2)
+  dueDate       DateTime? @map("due_date") @db.Date
+  paymentMode   String   @map("payment_mode") @db.VarChar(20) // UPI / card / cash / bank_transfer
+  receiptNumber String   @unique @map("receipt_number") @db.VarChar(50)
+  payerName     String   @map("payer_name") @db.VarChar(100)
+  receiptPdfUrl String?  @map("receipt_pdf_url")
+  status        String   @default("pending") @db.VarChar(20) // pending / partial / paid / failed
+  paidAt        DateTime? @map("paid_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [enrollmentId], onDelete: Cascade)
+
+  @@index([enrollmentId], name: "idx_payments_enrollment")
+  @@map("payments")
+}
+
+// ─── Table 6: Partner Payouts ──────────────────────────────────────
+model PartnerPayout {
+  payoutId         String    @id @default(uuid()) @map("payout_id")
+  enrollmentId     String    @map("enrollment_id")
+  partnerId        String    @map("partner_id")
+  feeCollected     Decimal   @map("fee_collected") @db.Decimal(10, 2)
+  commissionRate   Decimal   @map("commission_rate") @db.Decimal(5, 2) // snapshot
+  commissionAmount Decimal   @map("commission_amount") @db.Decimal(10, 2)
+  payoutStatus     String    @default("pending") @map("payout_status") @db.VarChar(20) // pending / processed / paid
+  paymentReference String?   @map("payment_reference") @db.VarChar(100)
+  processedAt      DateTime? @map("processed_at")
+  paidAt           DateTime? @map("paid_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [enrollmentId], onDelete: Cascade)
+  partner    Partner    @relation(fields: [partnerId], references: [partnerId], onDelete: Cascade)
+
+  @@index([partnerId], name: "idx_payout_partner")
+  @@index([payoutStatus], name: "idx_payout_status")
+  @@map("partner_payouts")
+}
