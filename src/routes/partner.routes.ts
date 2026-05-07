@@ -33,7 +33,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
 // GET /api/partners/:id
 router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const partner = await prisma.partner.findUnique({
+    const partner = await (prisma.partner.findUnique({
       where: { partnerId: req.params.id as string },
       include: {
         leads: { include: { enrollment: { include: { payments: true } } } },
