@@ -27,7 +27,7 @@ router.post('/:enrollment_id/payments', authenticate, async (req: AuthRequest, r
   try {
     const { enrollment_id } = req.params;
     const { fee_plan, total_fee, amount_paid, due_date, payment_mode, receipt_number, payer_name } = req.body;
-    const enrollment = await (prisma.enrollment.findUnique({ where: { enrollmentId: enrollment_id as string }, include: { lead: { include: { partner: true } }, cohort: true } }) as any);
+    const enrollment: any = await prisma.enrollment.findUnique({ where: { enrollmentId: enrollment_id as string }, include: { lead: { include: { partner: true } }, cohort: true } });
     if (!enrollment) { res.status(404).json({ error: 'Enrollment not found' }); return; }
     const status = Number(amount_paid) >= Number(total_fee) ? 'paid' : 'partial';
     const payment = await prisma.payment.create({ data: { enrollmentId: enrollment_id, feePlan: fee_plan, totalFee: total_fee, amountPaid: amount_paid, dueDate: due_date ? new Date(due_date) : null, paymentMode: payment_mode, receiptNumber: receipt_number, payerName: payer_name, status, paidAt: new Date() } });

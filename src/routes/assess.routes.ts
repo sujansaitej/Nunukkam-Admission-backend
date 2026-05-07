@@ -8,10 +8,10 @@ const router = Router();
 // GET /api/assess/:lead_id — Public: Get assessment questions
 router.get('/:lead_id', async (req: Request, res: Response) => {
   try {
-    const lead = await (prisma.lead.findUnique({
+    const lead: any = await prisma.lead.findUnique({
       where: { leadId: req.params.lead_id as string },
       include: { assessment: true },
-    }) as any);
+    });
 
     if (!lead) {
       res.status(404).json({ error: 'Lead not found' });
@@ -47,10 +47,10 @@ router.get('/:lead_id', async (req: Request, res: Response) => {
 // POST /api/assess/:lead_id/submit — Public: Submit assessment answers
 router.post('/:lead_id/submit', async (req: Request, res: Response) => {
   try {
-    const lead = await (prisma.lead.findUnique({
+    const lead: any = await prisma.lead.findUnique({
       where: { leadId: req.params.lead_id as string },
       include: { assessment: true, counselor: { select: { name: true } } },
-    }) as any);
+    });
 
     if (!lead) {
       res.status(404).json({ error: 'Lead not found' });
