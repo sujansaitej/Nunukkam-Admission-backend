@@ -34,7 +34,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
 router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const partner = await prisma.partner.findUnique({
-      where: { partnerId: req.params.id },
+      where: { partnerId: req.params.id as string },
       include: {
         leads: { include: { enrollment: { include: { payments: true } } } },
         payouts: { orderBy: { createdAt: 'desc' } },
