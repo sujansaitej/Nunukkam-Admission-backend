@@ -28,8 +28,22 @@ app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginResourcePolicy: { policy: 'cross-origin' } 
 }));
-const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173').split(',');
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:5174,http://localhost:5175').split(',');
+
+app.use(cors({ 
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true 
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -85,8 +99,9 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 });
 
 // ── Start ────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`🚀 Nunukkam EIS Backend running on http://localhost:${PORT}`);
+const HOST = '0.0.0.0';
+app.listen(PORT, HOST, () => {
+  console.log(`🚀 Nunukkam EIS Backend running on http://${HOST}:${PORT}`);
 });
 
 export default app;
