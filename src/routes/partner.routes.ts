@@ -41,8 +41,8 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       },
     });
     if (!partner) { res.status(404).json({ error: 'Partner not found' }); return; }
-    const totalCommission = partner.payouts.reduce((s, p) => s + Number(p.commissionAmount), 0);
-    const totalPaid = partner.payouts.filter(p => p.payoutStatus === 'paid').reduce((s, p) => s + Number(p.commissionAmount), 0);
+    const totalCommission = partner.payouts.reduce((s: number, p: any) => s + Number(p.commissionAmount), 0);
+    const totalPaid = partner.payouts.filter((p: any) => p.payoutStatus === 'paid').reduce((s: number, p: any) => s + Number(p.commissionAmount), 0);
     res.json({ ...partner, totalCommission, totalPaid });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
@@ -60,7 +60,7 @@ const updatePartner = async (req: AuthRequest, res: Response) => {
     if (commission_rate !== undefined) data.commissionRate = commission_rate;
     if (is_active !== undefined) data.isActive = is_active;
     const partner = await prisma.partner.update({
-      where: { partnerId: req.params.id },
+      where: { partnerId: req.params.id as string },
       data,
     });
     res.json(partner);

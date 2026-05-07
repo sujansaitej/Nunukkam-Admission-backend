@@ -25,7 +25,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
 // POST /api/enrollments/:id/payments — Record payment
 router.post('/:enrollment_id/payments', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const { enrollment_id } = req.params;
+    const enrollment_id = req.params.enrollment_id as string;
     const { fee_plan, total_fee, amount_paid, due_date, payment_mode, receipt_number, payer_name } = req.body;
     const enrollment: any = await prisma.enrollment.findUnique({ where: { enrollmentId: enrollment_id as string }, include: { lead: { include: { partner: true } }, cohort: true } });
     if (!enrollment) { res.status(404).json({ error: 'Enrollment not found' }); return; }
@@ -49,7 +49,7 @@ router.post('/:enrollment_id/payments', authenticate, async (req: AuthRequest, r
 // GET /api/enrollments/:id/payments
 router.get('/:enrollment_id/payments', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const payments = await prisma.payment.findMany({ where: { enrollmentId: req.params.enrollment_id }, orderBy: { createdAt: 'desc' } });
+    const payments = await prisma.payment.findMany({ where: { enrollmentId: req.params.enrollment_id as string }, orderBy: { createdAt: 'desc' } });
     res.json(payments);
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
