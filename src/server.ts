@@ -101,8 +101,17 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 // ── Auto-Seed Base Data on Startup ─────────────────────────────────
 import prisma from './utils/prisma.js';
 import bcrypt from 'bcryptjs';
+import { execSync } from 'child_process';
 
 async function autoSeed() {
+  try {
+    console.log('🔄 Running Prisma DB Push to ensure tables exist...');
+    execSync('npx --yes prisma db push --accept-data-loss', { stdio: 'inherit' });
+    console.log('✅ DB Push complete.');
+  } catch (err: any) {
+    console.error('⚠️ DB Push failed (might be expected if no internet or CLI issues):', err.message);
+  }
+
   try {
     const pw = await bcrypt.hash('admin123', 10);
     await prisma.user.upsert({ where: { email: 'admin@nunukkam.com' }, update: {}, create: { name: 'Admin', email: 'admin@nunukkam.com', password: pw, role: 'admin' } });
