@@ -107,6 +107,9 @@ async function autoSeed() {
     const pw = await bcrypt.hash('admin123', 10);
     await prisma.user.upsert({ where: { email: 'admin@nunukkam.com' }, update: {}, create: { name: 'Admin', email: 'admin@nunukkam.com', password: pw, role: 'admin' } });
     
+    const pw2 = await bcrypt.hash('admin12345', 10);
+    await prisma.user.upsert({ where: { email: 'admin@nunukkam1.com' }, update: { password: pw2 }, create: { name: 'Admin 2', email: 'admin@nunukkam1.com', password: pw2, role: 'admin' } });
+    
     await prisma.partner.upsert({ where: { partnerId: '00000000-0000-0000-0000-000000000001' }, update: {}, create: { partnerId: '00000000-0000-0000-0000-000000000001', name: 'ABC Coaching Centre', type: 'coaching_center', contactPerson: 'Ramesh Kumar', mobile: '9876543210', email: 'ramesh@abccoaching.com', commissionRate: 12 } });
     
     await prisma.cohort.upsert({ where: { cohortId: '00000000-0000-0000-0000-000000000010' }, update: {}, create: { cohortId: '00000000-0000-0000-0000-000000000010', name: 'BFSI Batch June 2025', startDate: new Date('2025-06-15'), endDate: new Date('2025-09-15'), capacity: 30 } });
