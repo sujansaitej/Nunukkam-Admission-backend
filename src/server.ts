@@ -98,9 +98,29 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
   });
 });
 
+// ── Auto-Seed Base Data on Startup ─────────────────────────────────
+import prisma from './utils/prisma.js';
+import bcrypt from 'bcryptjs';
+
+async function autoSeed() {
+  try {
+    const pw = await bcrypt.hash('admin123', 10);
+    await prisma.user.upsert({ where: { email: 'admin@nunukkam.com' }, update: {}, create: { name: 'Admin', email: 'admin@nunukkam.com', password: pw, role: 'admin' } });
+    
+    await prisma.partner.upsert({ where: { partnerId: '00000000-0000-0000-0000-000000000001' }, update: {}, create: { partnerId: '00000000-0000-0000-0000-000000000001', name: 'ABC Coaching Centre', type: 'coaching_center', contactPerson: 'Ramesh Kumar', mobile: '9876543210', email: 'ramesh@abccoaching.com', commissionRate: 12 } });
+    
+    await prisma.cohort.upsert({ where: { cohortId: '00000000-0000-0000-0000-000000000010' }, update: {}, create: { cohortId: '00000000-0000-0000-0000-000000000010', name: 'BFSI Batch June 2025', startDate: new Date('2025-06-15'), endDate: new Date('2025-09-15'), capacity: 30 } });
+    
+    console.log('✅ Base seed data (Admin, Default Partner, Cohort) verified on startup.');
+  } catch (err: any) {
+    console.error('⚠️ Could not auto-seed data (Database tables might not exist yet):', err.message);
+  }
+}
+
 // ── Start ────────────────────────────────────────────────────────
 const HOST = '0.0.0.0';
-app.listen(PORT, HOST, () => {
+app.listen(PORT, HOST, async () => {
+  await autoSeed();
   console.log(`🚀 Nunukkam EIS Backend running on http://${HOST}:${PORT}`);
 });
 
