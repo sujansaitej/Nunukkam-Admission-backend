@@ -18,6 +18,7 @@ RUN apk add --no-cache openssl
 
 COPY package*.json ./
 RUN npm ci --omit=dev
+RUN npm install -g prisma
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
@@ -26,4 +27,4 @@ COPY --from=builder /app/prisma ./prisma
 ENV PORT=4000
 EXPOSE 4000
 
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node dist/server.js"]
+CMD ["sh", "-c", "npx --yes prisma db push --accept-data-loss && node dist/server.js"]
