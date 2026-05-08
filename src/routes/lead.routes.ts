@@ -144,6 +144,27 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
   }
 });
 
+// DELETE /api/leads/wipe-all-students-danger — Wipes all student records (Admin only)
+router.delete('/wipe-all-students-danger', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    if (req.user?.role !== 'admin') {
+      res.status(403).json({ error: 'Only admins can wipe student data' });
+      return;
+    }
+    
+    // Delete in order to satisfy foreign key constraints
+    await prisma.payment.deleteMany();
+    await prisma.partnerPayout.deleteMany();
+    await prisma.enrollment.deleteMany();
+    await prisma.assessmentScore.deleteMany();
+    const result = await prisma.lead.deleteMany();
+    
+    res.json({ message: `Successfully removed ${result.count} student records and all related data from the new DB.` });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/leads/:id — Lead detail
 router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   try {
