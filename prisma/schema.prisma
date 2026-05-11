@@ -104,12 +104,14 @@ model Lead {
   source            String?  @db.VarChar(50) // just_dial / sulekha / website / newspapers / banners / pamphlet / posters / reference / others / partner
   partnerId         String?  @map("partner_id")
   counselorId       String?  @map("counselor_id")
+  cohortId          String?  @map("cohort_id") // Batch assigned during registration
   status            String   @default("new") @db.VarChar(30)
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
 
   partner    Partner?         @relation(fields: [partnerId], references: [partnerId], onDelete: SetNull)
   counselor  User?            @relation(fields: [counselorId], references: [userId], onDelete: SetNull)
+  cohort     Cohort?          @relation(fields: [cohortId], references: [cohortId], onDelete: SetNull)
   assessment AssessmentScore?
   enrollment Enrollment?
 
@@ -156,6 +158,7 @@ model Cohort {
 
   counselor   User?        @relation("CohortCounselor", fields: [counselorId], references: [userId], onDelete: SetNull)
   enrollments Enrollment[]
+  leads      Lead[]
 
   @@map("cohorts")
 }

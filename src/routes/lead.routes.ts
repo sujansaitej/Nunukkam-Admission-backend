@@ -34,15 +34,20 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
 
     // Respect explicitly selected counselor, or auto-assign (least loaded)
     let counselorId: string | null = b.counselor_id || null;
-    if (!counselorId) {
-      const counselors = await prisma.user.findMany({
-        where: { role: 'counselor', isActive: true },
-        include: { assignedLeads: { where: { status: { notIn: ['enrolled', 'dropped'] } } } },
-      });
-      if (counselors.length > 0) {
-        const sorted = counselors.sort((a, b) => a.assignedLeads.length - b.assignedLeads.length);
-        counselorId = sorted[0].userId;
+    try {
+      if (!counselorId) {
+        const counselors = await prisma.user.findMany({
+          where: { role: 'counselor', isActive: true },
+          include: { assignedLeads: { where: { status: { notIn: ['enrolled', 'dropped'] } } } },
+        });
+        if (counselors.length > 0) {
+          const sorted = counselors.sort((a, b) => a.assignedLeads.length - b.assignedLeads.length);
+          counselorId = sorted[0].userId;
+        }
       }
+    } catch (err) {
+      console.warn('Auto-counselor assignment failed:', err);
+      // Continue without counselor - don't fail the lead creation
     }
 
     const lead = await prisma.lead.create({
@@ -85,7 +90,8 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
         source: b.source || null,
         partnerId: b.partner_id || null,
         counselorId,
-        status: 'new',
+        cohortId: b.cohort_id || null, // Save batch assignment from registration
+        status: 'assessment_sent', // Auto-advance to screening step
       },
       include: { counselor: { select: { name: true, email: true } }, partner: { select: { name: true } } },
     });
@@ -93,9 +99,12 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
     // TODO: Send WhatsApp/SMS with assessment link
     // const assessmentLink = `${process.env.FRONTEND_URL}/assess/${lead.leadId}`;
 
+    const assessmentLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/assess/${lead.leadId}`;
+
     res.status(201).json({
       lead_id: lead.leadId,
-      message: 'Lead created and assessment link sent',
+      message: 'Lead created successfully. Assessment link ready.',
+      assessment_link: assessmentLink,
       lead,
     });
   } catch (err: any) {
@@ -168,29 +177,46 @@ router.delete('/wipe-all-students-danger', authenticate, async (req: AuthRequest
 // GET /api/leads/:id — Lead detail
 router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const lead = await prisma.lead.findUnique({
-      where: { leadId: req.params.id as string },
-      include: {
-        counselor: { select: { userId: true, name: true, email: true } },
-        partner: { select: { partnerId: true, name: true, commissionRate: true } },
-        assessment: true,
-        enrollment: {
-          include: {
-            cohort: true,
-            payments: { orderBy: { createdAt: 'desc' } },
-            payouts: true,
-          },
-        },
-      },
+    const leadId = req.params.id as string;
+
+    // First get the lead to check if it exists
+    const leadExists = await prisma.lead.findUnique({
+      where: { leadId },
+      select: { leadId: true, cohortId: true }
     });
 
-    if (!lead) {
+    if (!leadExists) {
       res.status(404).json({ error: 'Lead not found' });
       return;
     }
 
+    // Build include conditionally - only include cohort if lead has valid cohortId
+    const include: any = {
+      counselor: { select: { userId: true, name: true, email: true } },
+      partner: { select: { partnerId: true, name: true, commissionRate: true } },
+      assessment: true,
+      enrollment: {
+        include: {
+          cohort: true,
+          payments: { orderBy: { createdAt: 'desc' } },
+          payouts: true,
+        },
+      },
+    };
+
+    // Only include cohort relation if cohortId exists
+    if (leadExists.cohortId) {
+      include.cohort = { select: { cohortId: true, name: true, courseName: true, branch: true, timing: true, startDate: true } };
+    }
+
+    const lead = await prisma.lead.findUnique({
+      where: { leadId },
+      include,
+    });
+
     res.json(lead);
   } catch (err: any) {
+    console.error('Error fetching lead:', err);
     res.status(500).json({ error: err.message });
   }
 });
