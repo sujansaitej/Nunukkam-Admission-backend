@@ -29,12 +29,18 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' } 
 }));
 
-const allowedOrigins = (
-  process.env.CORS_ORIGIN ||
-  'https://demoenrollment.nunukkam.com,http://localhost:5173,http://localhost:5174,http://localhost:5175'
-)
-  .split(',')
-  .map((origin) => origin.trim().replace(/^["']|["']$/g, ''))
+const defaultAllowedOrigins = [
+  'https://demoenrollment.nunukkam.com',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+];
+
+const allowedOrigins = [
+  ...defaultAllowedOrigins,
+  ...(process.env.CORS_ORIGIN || '').split(','),
+]
+  .map((origin) => origin.trim().replace(/^["']|["']$/g, '').replace(/\/+$/, ''))
   .filter(Boolean);
 
 app.use(cors({ 
