@@ -29,7 +29,10 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' } 
 }));
 
-const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:5174,http://localhost:5175')
+const allowedOrigins = (
+  process.env.CORS_ORIGIN ||
+  'https://demoenrollment.nunukkam.com,http://localhost:5173,http://localhost:5174,http://localhost:5175'
+)
   .split(',')
   .map((origin) => origin.trim().replace(/^["']|["']$/g, ''))
   .filter(Boolean);
@@ -42,6 +45,7 @@ app.use(cors({
     if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
       callback(null, true);
     } else {
+      console.warn(`Blocked CORS origin: ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
